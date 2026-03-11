@@ -1,0 +1,10 @@
+# Python dependencies for the veriLLM Pipeline
+
+# LangChain for structured LLM interactions and prompting
+langchain==0.1.16
+langchain-core==0.1.45
+langchain-community==0.0.34
+requests==2.31.0
+
+# Future integration tools (Salesforce interaction will be handled by your friend, 
+# but if the worker needs to make direct API calls, we use requests)

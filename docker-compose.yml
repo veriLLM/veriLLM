@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  verillm-worker:
+    build: .
+    container_name: verillm_worker
+    restart: unless-stopped
+    # 1. IN-MEMORY PROCESSING (Data in Use Protection)
+    # Mount the /app/data directory entirely in RAM via tmpfs.
+    # No target PII ever touches the physical host disk or container filesystem layer.
+    tmpfs:
+      - /app/data:size=512M,uid=1000,gid=1000,mode=1700
+    environment:
+      # Connect locally to the isolated Ollama instance
+      - OLLAMA_HOST=http://ollama:11434
+    env_file:
+      - .env
+    depends_on:
+      - ollama
+    # 4. NETWORK ISOLATION (Microsegmentation)
+    networks:
+      - verillm-net
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: verillm_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      # This purely stores the downloaded model weights, not our target data
+      - ollama_data:/root/.ollama
+    networks:
+      - verillm-net
+    # Optional: If you have a GPU, uncomment the following lines for faster LLM inference
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  ollama_data:
+
+networks:
+  verillm-net:
+    driver: bridge
