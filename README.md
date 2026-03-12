@@ -35,7 +35,7 @@ flowchart TD
         B -- "Sends unstructured text" --> C
         C -- "Returns synthetic text" --> B
         
-        note1>All data processed entirely in RAM]
+        note1[All data processed entirely in RAM]
     end
     
     D[Salesforce Sandbox\n(Safe Fake Data)]:::sandbox
