@@ -16,28 +16,7 @@
 
 The following flowchart illustrates how target data moves from the Production environment, through our secure AI engine, and safely into the Developer Sandbox.
 
-```mermaid
-flowchart TD
-    %% Define subtle, accessible styles
-    classDef minimal fill:#f8f9fa,stroke:#ced4da,stroke-width:2px,color:#212529;
-    classDef step fill:#ffffff,stroke:#adb5bd,stroke-width:1px,color:#212529;
-
-    A["🏢 Real Business Systems\n(Contains actual customer information)"]:::minimal
-    
-    subgraph Pipeline["🤖 Secure AI Pipeline"]
-        direction TB
-        S1["🔍 AI Scans Text\n(Reads paragraphs and finds hidden personal info)"]:::step
-        S2["✍️ AI Generates Fakes\n(Replaces real names & numbers with realistic, fake ones)"]:::step
-        S3["📦 Packages Clean Data\n(Prepares the securely sanitized file)"]:::step
-        
-        S1 --> S2 --> S3
-    end
-    
-    C["✅ Safe Testing Environment\n(Developers build features using safe data)"]:::minimal
-
-    A -- "1. Sends raw data" --> S1
-    S3 -- "2. Pushes safe data" --> C
-```
+![ veriLLM Flowchart](images/flow.png)
 
 ## 🛠️ Tech Stack
 *   **Python:** Orchestrates the data flow and connects to APIs.
