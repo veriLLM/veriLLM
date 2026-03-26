@@ -27,3 +27,15 @@ The following flowchart illustrates how target data moves from the Production en
 ## ⚡ Execution
 *   **Local Test:** Run `python scripts/mock_generator.py` to see the engine scrub PII from mock JSON payloads instantly.
 *   **Secure Container:** Run `docker-compose up --build` to deploy the isolated pipeline.
+
+## 📜 Compliance and Policy
+This project includes governance artifacts to support secure, policy-driven operations:
+
+- `docs/GDPR_POLICY.md`: GDPR-aligned policy baseline for lawful processing, minimization, confidentiality, incident response, and accountability.
+- `docs/DPIA_DOCUMENTATION.md`: DPIA-focused documentation for privacy risk identification, mitigation controls, and review cadence.
+
+### Operational Policy Highlights
+- Process only required fields from source systems.
+- Do not store or export unsanitized records to local files.
+- Keep credentials outside source code and load from secure environment configuration.
+- Use PII-safe logging and avoid printing full payload contents.
