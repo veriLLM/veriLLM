@@ -5,7 +5,7 @@ from langchain_core.prompts import PromptTemplate
 logger = logging.getLogger("SecureLogger")
 
 class PIIAnonymizer:
-    def __init__(self, model_name="llama3", base_url="http://ollama:11434"):
+    def __init__(self, model_name="gemma3:4b", base_url="http://ollama:11434"):
         # We point to our internal isolated Ollama container
         self.llm = Ollama(model=model_name, base_url=base_url, temperature=0.1)
         
@@ -33,7 +33,8 @@ Anonymized Text:"""
         try:
             chain = self.prompt | self.llm
             result = chain.invoke({"text": text})
-            return result.strip()
+            # Truncate to 255 chars to stay within Salesforce field length limits
+            return result.strip()[:255]
         except Exception as e:
             # [CYBERSEC] Error Handling without PII Leakage
             # We explicitly do not log the text that caused the crash.
