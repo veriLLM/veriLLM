@@ -37,9 +37,12 @@ def get_salesforce_connection(org_type: str = "PROD") -> Salesforce:
     # Fallback to local sf CLI if credentials aren't in .env
     print(f"[*] No credentials found for {org_type} in .env. Attempting to use local Salesforce CLI session...")
     try:
+        # Determine the target org alias based on the execution context
+        target = "PROD_ORG" if org_type == "PROD" else "SANDBOX_ORG"
+        
         # Ask sf for the current access token
         # Adding shell=True is highly recommended on Windows when executing .cmd global scripts like sf
-        result = subprocess.run(['sf', 'org', 'display', '--json'], capture_output=True, text=True, check=True, shell=True)
+        result = subprocess.run(['sf', 'org', 'display', '--target-org', target, '--json'], capture_output=True, text=True, check=True, shell=True)
         org_data = json.loads(result.stdout).get("result", {})
         
         access_token = org_data.get("accessToken")
@@ -91,14 +94,25 @@ def push_to_sandbox(sf_sandbox: Salesforce, records: List[Dict]):
     # We use bulk API or iterative updates using simple-salesforce
     try:
         # Warning: For update to work, the Sandbox MUST have records with these matching Ids. 
-        # Usually Sandbox data is copied from Prod, meaning Ids are identical.
-        # Alternatively, you could do an upsert on an External ID if needed.
+        # We are bypassing this by stripping the Prod ID and 'inserting' new ones safely.
         
-        # simple_salesforce bulk update takes a list of dicts. Each must contain the 'Id'.
-        results = sf_sandbox.bulk.Contact.update(records)
+        for record in records:
+            if 'Id' in record:
+                del record['Id']
         
-        success_count = sum(1 for res in results if res.get('success'))
-        print(f"[+] Successfully updated {success_count}/{len(records)} records in Sandbox!")
+        # simple_salesforce bulk insert takes a list of dicts without the 'Id' field
+        # We use a standard synchronous loop instead of .bulk because free Developer Edition orgs 
+        # often do not have the Async Bulk API enabled.
+        success_count = 0
+        for record in records:
+            try:
+                res = sf_sandbox.Contact.create(record)
+                if res.get('success'):
+                    success_count += 1
+            except Exception as e:
+                print(f"[-] Failed to insert record: {e}")
+                
+        print(f"[+] Successfully inserted {success_count}/{len(records)} records in Sandbox!")
         
     except Exception as e:
         print(f"[-] Error updating Sandbox: {e}")
