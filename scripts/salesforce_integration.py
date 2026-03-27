@@ -21,7 +21,10 @@ def get_salesforce_connection(org_type: str = "PROD") -> Salesforce:
     password = os.environ.get(f"{prefix}SF_PASSWORD")
     token = os.environ.get(f"{prefix}SF_TOKEN")
     
-    if username and password:
+    # [CYBERSEC] Explicit Validation of Required Credentials
+    if not username or not password:
+        print(f"[-] Missing required environment variables for {org_type} (SF_USERNAME/SF_PASSWORD)")
+    else:
         try:
             sf = Salesforce(
                 username=username,
@@ -32,7 +35,8 @@ def get_salesforce_connection(org_type: str = "PROD") -> Salesforce:
             print(f"[+] Successfully connected to {org_type} Org via .env")
             return sf
         except Exception as e:
-            print(f"[-] Failed to connect to {org_type} Org via .env: {e}")
+            # [CYBERSEC] Avoid printing full exception which might contain connection strings
+            print(f"[-] Failed to connect to {org_type} Org via .env. Authentication error.")
             
     # Fallback to local sf CLI if credentials aren't in .env
     print(f"[*] No credentials found for {org_type} in .env. Attempting to use local Salesforce CLI session...")
@@ -45,16 +49,22 @@ def get_salesforce_connection(org_type: str = "PROD") -> Salesforce:
         result = subprocess.run(['sf', 'org', 'display', '--target-org', target, '--json'], capture_output=True, text=True, check=True, shell=True)
         org_data = json.loads(result.stdout).get("result", {})
         
+        # [CYBERSEC] Secure handling of CLI output
         access_token = org_data.get("accessToken")
         instance_url = org_data.get("instanceUrl")
+        
+        # Immediately clear org_data from memory if possible, though Python GC handles it, 
+        # we ensure we don't return or log the full raw JSON.
+        del org_data
         
         if access_token and instance_url:
             sf = Salesforce(session_id=access_token, instance_url=instance_url)
             print(f"[+] Successfully connected to CLI Auth Org: {instance_url}")
             return sf
             
-    except Exception as e:
-        print(f"[-] Failed to connect via local Salesforce CLI: {e}")
+    except Exception:
+        # [CYBERSEC] Generic error to avoid system state disclosure
+        print(f"[-] Failed to connect via local Salesforce CLI. Ensure 'sf' is installed and logged in.")
         print("\n[!] To fix this, securely login via your browser by running this in your terminal:\n")
         print("    sf org login web\n")
         print("Then run this Python script again!")
